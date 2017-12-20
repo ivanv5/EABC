@@ -4,4 +4,4 @@ set(
         "gpio_test.cc"
 )
 add_executable(tests ${TESTS})
-target_link_libraries(tests gpio gtest gmock)
+target_link_libraries(tests gpio gtest gmock fmt::fmt)
