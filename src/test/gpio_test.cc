@@ -3,13 +3,16 @@
 
 class GPIOTest: public testing::Test {
 public:
-  GPIOTest() : gpio18(18) {}
-  GPIO::gpio gpio18;
+  GPIOTest() {}
 };
 
+#include <fstream>
+
 TEST_F(GPIOTest, TestExporter) {
+    GPIO::gpio gpio18(18);
     gpio18.set(true);
     ASSERT_EQ(gpio18.get(), true);
     gpio18.set(false);
     ASSERT_EQ(gpio18.get(), false);
+
 }

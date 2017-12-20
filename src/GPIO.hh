@@ -20,11 +20,29 @@ namespace GPIO {
     // User-level interface
     class gpio {
     public:
-	explicit gpio(int pin);
+	enum class direction {
+	    IN,
+	    OUT
+	};
+	
+	enum class edge {
+	    NONE,
+	    RAISING,
+	    FALLING,
+	    BOTH
+	};
+
+	explicit gpio(int pin,
+		      direction d = direction::IN,
+		      edge e = edge::NONE,
+		      bool active_low = false);
 	~gpio();
 
 	void set(bool v);
 	bool get() const;
+	void configure(direction);
+	void configure(edge);
+	void set_active_low(bool v = true);
     private:
 	gpio_pin _pin; 
     };
