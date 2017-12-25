@@ -77,7 +77,13 @@ private:
 
 class gpio_reactor: public unix_desc {
 public:
-    gpio_reactor() : unix_desc{::epoll_create1(0)} {}
+    gpio_reactor() : unix_desc{::epoll_create1(0)} {
+	std::thread t([this] {
+		for(;;)
+		    this->handle_events();
+	    });
+	t.detach();
+    }
 
     void handle_events() {
 	const int MAX_EVENTS = 10;
