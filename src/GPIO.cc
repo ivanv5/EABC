@@ -1,5 +1,4 @@
 #include "GPIO.hh"
-#include "unix_file.hh"
 
 #include <string>
 #include <iostream>
@@ -89,7 +88,8 @@ public:
 	const int MAX_EVENTS = 10;
 	struct epoll_event ev[MAX_EVENTS];
 	int n = ::epoll_wait(_fd, ev, MAX_EVENTS, 100);
-	if (n < 0) throw std::runtime_error(format("epoll_wait"));
+	if (n < 0)
+	    throw std::runtime_error(format("epoll_wait"));
 	for (int i=0; i<n; ++i) {
 	    int fd = ev[i].data.fd;
 	    try { _fds[fd](); }
