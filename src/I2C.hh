@@ -1,6 +1,7 @@
 #ifndef I2C_HH
 #define I2C_HH
 # include <bcm2835.h>
+# include <system_error>
 
 namespace I2C {
 
@@ -21,7 +22,7 @@ namespace I2C {
 	void set_address(uint8_t addr) {
 	    if (_current == addr) return;
 	    _current = addr;
-	    bcm2835_i2c_setSlaveAddress(slave);
+	    bcm2835_i2c_setSlaveAddress(addr);
 	}
     };
     
@@ -53,6 +54,7 @@ namespace I2C {
 
     private:
 	static bus _bus;
+	uint8_t _address;
     };
 
 }

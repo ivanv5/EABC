@@ -2,8 +2,9 @@
 #define GPIO_HH
 #include <iosfwd>
 #include <functional>
-#include <optional>
 
+#include <experimental/optional>
+  
 namespace GPIO {
 
     // RAII class for export/unexport
@@ -44,11 +45,11 @@ namespace GPIO {
 	void set(bool v);
 	bool get() const;
 	void configure(direction);
-	void configure(edge, std::optional<callback> = {});
+	void configure(edge, std::experimental::optional<callback> = {});
 	void set_active_low(bool v = true);
 
     private:
-	void set_callback(std::optional<callback> cb);
+	void set_callback(std::experimental::optional<callback> cb);
 
     private:
 	gpio_pin _pin;

@@ -4,4 +4,5 @@ set(
         "gpio_test.cc"
 )
 add_executable(tests ${TESTS})
-target_link_libraries(tests gpio gtest gmock fmt::fmt)
+target_include_directories(tests PUBLIC "..")
+target_link_libraries(tests rpi gtest gmock fmt bcm2835)

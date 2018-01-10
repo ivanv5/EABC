@@ -147,7 +147,7 @@ void gpio::configure(direction d)
     sysfs << dir_names[static_cast<int>(d)];
 }
 
-void gpio::configure(edge e, std::optional<gpio::callback> cb)
+void gpio::configure(edge e, std::experimental::optional<gpio::callback> cb)
 {
     set_callback(cb);
     std::ofstream sysfs(format("{}/gpio{}/edge", sysfs_path, _pin));
@@ -163,7 +163,7 @@ void gpio::configure(edge e, std::optional<gpio::callback> cb)
     sysfs << edge_names[static_cast<int>(e)];
 }
 
-void gpio::set_callback(std::optional<gpio::callback> cb)
+void gpio::set_callback(std::experimental::optional<gpio::callback> cb)
 {
     auto value_path = format("{}/gpio{}/value", sysfs_path, _pin);
     auto prev = gpio_fds.find(value_path);
