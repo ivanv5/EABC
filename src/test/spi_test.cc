@@ -10,5 +10,4 @@ public:
 
 TEST_F(SPITest, TestExporter) {
     SPI::device adc(0);
-    
 }

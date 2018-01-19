@@ -3,6 +3,8 @@ set(SOURCES
   "GPIO.hh"
   "I2C.cc"
   "I2C.hh"
+  "SPI.hh"
+  "SPI.cc"
 )
 set(CMAKE_CXX_FLAGS "-std=gnu++1y")
 

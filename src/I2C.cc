@@ -16,3 +16,4 @@ void check_reason_code(uint8_t code)
     throw std::runtime_error("Not all data is sent / received");
 }
 	
+bus device::_bus;
