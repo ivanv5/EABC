@@ -32,9 +32,8 @@ namespace SPI {
 
 	void set_speed(uint32_t speed) {
 	    if (_speed == speed) return;
-	    _speed = speed;
-	    auto div = bcm2835_aux_spi_CalcClockDivider(speed);
-	    bcm2835_aux_spi_setClockDivider(div);
+	    _speed = speed; // FIXME: speed is not used yet
+	    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);
 	}
 
     };
@@ -44,10 +43,10 @@ namespace SPI {
 	explicit device(uint8_t address) : _address(address) {}
 	
 	template <class T>
-	void read(T& data) const { xfer(data) }
+	void read(T& data) const { xfer(data); }
 
 	template <class T>
-	void write(const T& data) const { xfer(data, T()); }
+	void write(const T& data) const { T out; xfer(data, out); }
 
 	template <class T>
 	void xfer(T& data) const { xfer(data, data); }
@@ -55,9 +54,9 @@ namespace SPI {
 	template <class T, class U>
 	void xfer(const T& data_out, U& data_in) const {
 	    _bus.set_address(_address);
-	    char* in  = reinterpret_cast<char>(data_in);
-	    char* out  = reinterpret_cast<char>(data_out);
-	    bcm2835_spi_transfernb(out, in,
+	    char& in  = reinterpret_cast<char&>(data_in);
+	    char& out  = const_cast<char&>(reinterpret_cast<const char&>(data_out));
+	    bcm2835_spi_transfernb(&out, &in,
 				   std::max(sizeof(T), sizeof(U)));
 	}
 
