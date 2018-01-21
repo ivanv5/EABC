@@ -1,10 +1,10 @@
 set(SOURCES
+  "RPi.cc"
   "GPIO.cc"
   "GPIO.hh"
-  "I2C.cc"
   "I2C.hh"
   "SPI.hh"
-  "SPI.cc"
+  "ads1118.hh"
 )
 set(CMAKE_CXX_FLAGS "-std=gnu++1y")
 
@@ -23,4 +23,3 @@ install(
 )
 
 add_subdirectory("test")
-
