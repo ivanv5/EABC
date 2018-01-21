@@ -5,7 +5,7 @@
 
 class ads1118 {
 
-
+    // CFG register is stored MSB first
     struct config_register {
 	unsigned mode:     1;
 	unsigned pga:      3;
@@ -20,6 +20,7 @@ class ads1118 {
     } __attribute__((packed));
     
 public:
+    
     ads1118(uint8_t addr) : _spi(addr) {
 	config_register cfg = {
 	  .mode = 1,
@@ -47,9 +48,7 @@ public:
 	  .ts_mode = 0,
 	  .rate = 3,
 	};
-	int16_t data;
-	_spi.xfer(cfg, data);
-	return data;
+	return xfer(cfg);
     }
 
     int16_t t() const {
@@ -64,12 +63,16 @@ public:
 	  .ts_mode = 1,
 	  .rate = 3,
 	};
-	int16_t data;
-	_spi.xfer(cfg, data);
-	return data;
+	return xfer(cfg);
     }
     
 private:
+    int16_t xfer(const config_register& cfg) {
+	unsigned char data[2];
+	_spi.xfer(cfg, data);
+	return (int16_t) (data[0] << 8 | data[1])
+    }
+
     SPI::device _spi;
 };
 

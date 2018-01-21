@@ -1,13 +1,12 @@
 #ifndef I2C_HH
 #define I2C_HH
-# include <bcm2835.h>
-# include <system_error>
+# include "RPi.hh"
 
 namespace I2C {
 
     void check_reason_code(uint8_t code);
 
-    class bus {
+  class bus : public RPi::base {
 	uint8_t _current;
 	
     public:

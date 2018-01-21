@@ -1,14 +1,32 @@
 #ifndef SPI_HH
 #define SPI_HH
-# include <bcm2835.h>
+# include "RPi.hh"
 # include <algorithm>
-# include <system_error>
 
 namespace SPI {
 
-    class bus {
+  enum class speed {
+    Pi3_200Mhz         = 1U << 1,
+    Pi3_100Mhz         = 1U << 2,
+    Pi3_50Mhz          = 1U << 3,
+    Pi3_25Mhz          = 1U << 4,
+    Pi3_12_5Mhz        = 1U << 5,
+    Pi3_6_25Mhz        = 1U << 6,
+    Pi3_3_125Mhz       = 1U << 7,
+    Pi3_1_5625Mhz      = 1U << 8,
+    Pi3_781_25Khz      = 1U << 9,
+    Pi3_390_625Khz     = 1U << 10,
+    Pi3_195_3125Khz    = 1U << 11,
+    Pi3_97_65625Khz    = 1U << 12,
+    Pi3_48_828125Khz   = 1U << 13,
+    Pi3_24_4140625Khz  = 1U << 14,
+    Pi3_12_20703125Khz = 1U << 15,
+    Pi3_6_1035156Khz   = 1U << 16,
+  };
+  
+  class bus : public RPi::base {
 	uint8_t _addr;
-	uint32_t _speed;
+	speed _speed;
 
     public:
 	bus() : _addr(~0) {
@@ -19,7 +37,7 @@ namespace SPI {
 	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, 0);
 	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS2, 0);
 	    set_address(0);
-	    set_speed(4000000);
+	    set_speed(Pi3_3_125Mhz);
 	}
 	
 	~bus() { bcm2835_spi_end(); }
@@ -30,10 +48,10 @@ namespace SPI {
 	    bcm2835_spi_chipSelect(addr);
 	}
 
-	void set_speed(uint32_t speed) {
-	    if (_speed == speed) return;
-	    _speed = speed; // FIXME: speed is not used yet
-	    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);
+	void set_speed(speed s) {
+	    if (_speed == s) return;
+	    _speed = s;
+	    bcm2835_spi_setClockDivider(s);
 	}
 
     };

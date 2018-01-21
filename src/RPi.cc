@@ -1,8 +1,7 @@
 #include "I2C.hh"
+#include "SPI.hh"
 
-using namespace I2C;
-
-void check_reason_code(uint8_t code)
+void I2C::check_reason_code(uint8_t code)
 {
   if (code == BCM2835_I2C_REASON_OK) return;
   
@@ -15,5 +14,8 @@ void check_reason_code(uint8_t code)
   if (code == BCM2835_I2C_REASON_ERROR_DATA)
     throw std::runtime_error("Not all data is sent / received");
 }
-	
-bus device::_bus;
+
+
+RPi::system RPi::base::_rpi;
+I2C::bus I2C::device::_bus;
+SPI::bus SPI::device::_bus;
