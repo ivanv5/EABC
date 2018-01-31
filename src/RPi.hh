@@ -13,7 +13,8 @@ namespace RPi {
 	~system() { bcm2835_close(); }
     };
 
-
+    const unsigned SYSTEM_CLOCK_FREQ = 400000000;
+  
     class base {
 	static system _rpi;
     };
