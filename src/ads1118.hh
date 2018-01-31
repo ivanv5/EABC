@@ -48,7 +48,7 @@ public:
 	  .ts_mode = 0,
 	  .rate = 3,
 	};
-	return xfer(cfg);
+	return _xfer(cfg);
     }
 
     int16_t t() const {
@@ -63,14 +63,14 @@ public:
 	  .ts_mode = 1,
 	  .rate = 3,
 	};
-	return xfer(cfg);
+	return _xfer(cfg);
     }
     
 private:
-    int16_t xfer(const config_register& cfg) {
+    int16_t _xfer(const config_register& cfg) const {
 	unsigned char data[2];
 	_spi.xfer(cfg, data);
-	return (int16_t) (data[0] << 8 | data[1])
+	return (int16_t) (data[0] << 8 | data[1]);
     }
 
     SPI::device _spi;

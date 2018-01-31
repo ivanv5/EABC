@@ -37,7 +37,7 @@ namespace SPI {
 	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, 0);
 	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS2, 0);
 	    set_address(0);
-	    set_speed(Pi3_3_125Mhz);
+	    set_speed(speed::Pi3_3_125Mhz);
 	}
 	
 	~bus() { bcm2835_spi_end(); }
@@ -51,7 +51,7 @@ namespace SPI {
 	void set_speed(speed s) {
 	    if (_speed == s) return;
 	    _speed = s;
-	    bcm2835_spi_setClockDivider(s);
+	    bcm2835_spi_setClockDivider(static_cast<unsigned short>(s));
 	}
 
     };
