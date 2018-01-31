@@ -10,10 +10,6 @@ public:
 };
 
 TEST_F(ADS1118Test, TestExporter) {
-    bcm2835_init();
-
     ads1118 adc(0);
     std::cout << adc.in(0) << std::endl;
-
-    bcm2835_close();
 }

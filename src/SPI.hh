@@ -32,11 +32,9 @@ namespace SPI {
 	void set_speed(unsigned s) {
 	    if (_speed == s) return;
 	    _speed = s;
+	    uint16_t div = static_cast<uint16_t>(SYSTEM_CLOCK_FREQ/s);
 	    // Divider must be even
-	    uint16_t div = SYSTEM_CLOCK_FREQ/s;
-	    if (div & 1)
-		throw std::runtime_error("Unable to set SPI speed, divider must be even");
-	    bcm2835_spi_setClockDivider(div);
+	    bcm2835_spi_setClockDivider(div & 1);
 	}
 
     };
