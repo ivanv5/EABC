@@ -5,6 +5,7 @@
 //#include <string.h>
 //using namespace std;
 # include "I2C.hh"
+#include <thread>
 
 class hyt221 : public I2C::device {
     struct measurement_internal {
@@ -18,7 +19,14 @@ public:
     };
 
     hyt221() : I2C::device(0x28) {}
+    
     measurement read_t_h() const {
+	using namespace std::chrono_literals;
+
+	char readCmd = '0';
+	write(readCmd);
+	std::this_thread::sleep_for(60ms);
+	
 	measurement_internal m;
 	read(m);
 	measurement ret {

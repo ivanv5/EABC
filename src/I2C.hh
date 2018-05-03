@@ -39,7 +39,7 @@ namespace I2C {
 	template <class T>
 	void write(const T& data) const {
 	    _bus.set_address(_address);
-	    char* buf = reinterpret_cast<char*>(&data);
+	    const char* buf = reinterpret_cast<const char*>(&data);
 	    check_reason_code(bcm2835_i2c_write(buf, sizeof(T)));
 	}
 
