@@ -13,20 +13,18 @@ class hyt221 : public I2C::device {
   
 public:
     struct measurement {
-	float t;
-	float h;
+	double t;
+	double h;
     };
 
     hyt221() : I2C::device(0x28) {}
     measurement read_t_h() const {
 	measurement_internal m;
 	read(m);
-
 	measurement ret {
-	    .t = ((m.data[0] & 0x3f)<<8 | m.data[1]) * 100.f / 0x3fff,
-	    .h = (m.data[2]<<8 | m.data[3]&0xfc) * 165.f / 0xfffc - 40.f
+	    ((m.data[0] & 0x3f)<<8 | m.data[1]) * 100. / 0x3fff,
+	    (m.data[2]<<8 | m.data[3]&0xfc) * 165. / 0xfffc - 40.
 	};
-	//std::cout << ret << std::endl;
 	return ret;
     }
 };
