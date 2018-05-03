@@ -6,17 +6,17 @@ namespace I2C {
 
     void check_reason_code(uint8_t code);
 
-  class bus : public RPi::base {
+  class bus : public RPi::base {// clase bus derivada de RPI BASE
 	uint8_t _current;
 	
     public:
-	bus() : _current(0) {
+	bus() : _current(0) { //DEFINICIÓN DEL CONSTRUCTOR BUS
 	    if (!bcm2835_i2c_begin())
 		throw std::runtime_error("Failed to init I2C. Are you root?");
 	    bcm2835_i2c_set_baudrate(100000);
 	}
 	
-	~bus() { bcm2835_i2c_end(); }
+	~bus() { bcm2835_i2c_end(); } //CASO CONTRARIO
 
 	void set_address(uint8_t addr) {
 	    if (_current == addr) return;
@@ -25,21 +25,21 @@ namespace I2C {
 	}
     };
     
-    class device {
+    class device { //CLASE DISPOSITIVO
     public:
 	explicit device(uint8_t address) : _address(address) {}
 	
 	template <class T>
 	void read(T& data) const {
 	    _bus.set_address(_address);
-	    char* buf = reinterpret_cast<char>(data);
+	    char* buf = reinterpret_cast<char*>(&data);
 	    check_reason_code(bcm2835_i2c_read(buf, sizeof(T)));
 	}
 
 	template <class T>
 	void write(const T& data) const {
 	    _bus.set_address(_address);
-	    char* buf = reinterpret_cast<char>(data);
+	    char* buf = reinterpret_cast<char*>(&data);
 	    check_reason_code(bcm2835_i2c_write(buf, sizeof(T)));
 	}
 

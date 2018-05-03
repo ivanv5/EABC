@@ -32,7 +32,7 @@ namespace SPI {
 	void set_speed(unsigned s) {
 	    if (_speed == s) return;
 	    _speed = s;
-	    uint16_t div = static_cast<uint16_t>(SYSTEM_CLOCK_FREQ/s);
+	    uint16_t div = static_cast<uint16_t>(RPi::SYSTEM_CLOCK_FREQ/s);
 	    // Divider must be even
 	    bcm2835_spi_setClockDivider(div & 1);
 	}

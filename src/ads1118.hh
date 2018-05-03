@@ -21,7 +21,7 @@ class ads1118 {
     
 public:
     
-    ads1118(uint8_t addr) : _spi(addr) {
+    ads1118(uint8_t addr) : _spi(addr) {//DEFINICION CONTRUCTOR ADS1118
 	config_register cfg = {
 	  .mode = 1,
 	  .pga = 0,
@@ -36,7 +36,7 @@ public:
 	_spi.write(cfg);
     }
 
-    int16_t in(uint8_t channel) const {
+    int16_t in(uint8_t channel) const { //IN LEER.
 	config_register cfg = {
 	  .mode = 1,
 	  .pga = 0,
