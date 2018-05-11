@@ -46,16 +46,16 @@ namespace I2C {
 	template <class T>
 	void read_register(uint8_t reg, T& data) const {
 	    _bus.set_address(_address);
-	    char raddr = static_cast<char>(reg);
+	    char* wbuf = reinterpret_cast<char*>(&reg);
 	    char* buf = reinterpret_cast<char*>(&data);
-	    check_reason_code(bcm2835_i2c_read_register_rs(&raddr, buf, sizeof(T)));
+	    check_reason_code(bcm2835_i2c_read_register_rs(wbuf, buf, sizeof(T)));
 	}
 
 	template <class W, class R>
 	void write_read_rs(const W& cmd, R& data) const {
 	    _bus.set_address(_address);
-	    char* wbuf = reinterpret_cast<char>(cmd);
-	    char* rbuf = reinterpret_cast<char>(data);
+	    char* wbuf = const_cast<char*>(reinterpret_cast<const char*>(&cmd));
+	    char* rbuf = reinterpret_cast<char*>(&data);
 	    check_reason_code(bcm2835_i2c_write_read_rs(wbuf, sizeof(W), rbuf, sizeof(R)));
 	}
 
