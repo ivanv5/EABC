@@ -1,9 +1,5 @@
 #ifndef HYT221_HH
 #define HYT221_HH
-//#include <iostream>
-//#include <fstream>
-//#include <string.h>
-//using namespace std;
 # include "I2C.hh"
 #include <thread>
 
