@@ -64,6 +64,7 @@ namespace I2C {
 	uint8_t _address;
     };
 
+
 }
 
 #endif
