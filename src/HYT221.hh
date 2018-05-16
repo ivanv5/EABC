@@ -10,13 +10,13 @@ class hyt221 : public I2C::device {
   
 public:
     struct measurement {
-	double t;
 	double h;
+	double t;
     };
 
     hyt221() : I2C::device(0x28) {}
     
-    measurement read_t_h() const {
+    measurement read_h_t() const {
 	using namespace std::chrono_literals;
 
 	char readCmd = '0';
