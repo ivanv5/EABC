@@ -1,12 +1,10 @@
 #ifndef BMP280_HH
 #define BMP280_HH
-# include "I2C.hh"
+#include "I2C.hh"
 #include <iostream>
 #include <fstream>
-#include <ctime>
 #include <unistd.h>
-#include <thread>
-#include <cerrno>
+
 
 class bmp280 : public I2C::device {
 public:
@@ -17,9 +15,6 @@ public:
     
     bmp280(slave_address addr = sdo_to_gnd) : I2C::device(addr) {
 	read_register(0x88, _cal);
-	char modo;
-	//read_register(0xf4, modo);
-	//std:: cout << "modo: " << (int)modo << std::endl;
 	char mode[] = { 0xf4, 0x3F};
 	write(mode);
 	usleep(5);
