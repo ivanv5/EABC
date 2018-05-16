@@ -2,6 +2,11 @@
 #define BMP280_HH
 # include "I2C.hh"
 #include <iostream>
+#include <fstream>
+#include <ctime>
+#include <unistd.h>
+#include <thread>
+#include <cerrno>
 
 class bmp280 : public I2C::device {
 public:
@@ -13,10 +18,11 @@ public:
     bmp280(slave_address addr = sdo_to_gnd) : I2C::device(addr) {
 	read_register(0x88, _cal);
 	char modo;
-	read_register(0xf4, modo);
-	std:: cout << "modo: " << (int)modo << std::endl;
-	char mode[] = { 0xf4, 3 };
+	//read_register(0xf4, modo);
+	//std:: cout << "modo: " << (int)modo << std::endl;
+	char mode[] = { 0xf4, 0x3F};
 	write(mode);
+	usleep(5);
     }
     
     float read_t() const {
@@ -29,11 +35,11 @@ public:
 
 	int64_t var1 = t_fine - 128000LL;
 	int64_t var2 = var1 * var1 * (int64_t)_cal.p6;
-	var2 += (var1 * (int64_t)_cal.p5) << 17;
-	var2 += (int64_t)_cal.p4 << 35;
+	var2 =var2 + ((var1 * (int64_t)_cal.p5) << 17);
+	var2 = var2+ (((int64_t)_cal.p4) << 35);
 	var1 = ((var1 * var1 * (int64_t)_cal.p3) >> 8)
 	    + ((var1 * (int64_t)_cal.p2) << 12);
-	var1 = ((1LL << 47 + var1) * (int64_t) _cal.p1) >> 33;
+	var1 = (((1LL << 47)+var1)*(int64_t) _cal.p1)>>33;  //+ var1) * (int64_t) _cal.p1) >> 33;
 
 	if (var1 == 0) return 0.f;
 
@@ -53,23 +59,19 @@ private:
     int32_t read_20b(uint8_t reg) const {
 	char data[3];
 	read_register(reg, data);
-	std::cout << "read20b " << std::hex
-		  << (int)data[0] << " "
-		  << (int)data[1] << " "
-		  << (int)data[2] << std::endl;
 	return data[0]<<12 | data[1] << 4 | data[2] >> 4;
     }
     
     int32_t read_t_fine() const {
 	int adc_t = read_ut();
-	int32_t var1 = ((adc_t >> 3) - ((int32_t)_cal.t1 << 1))
+	int32_t fd= ((adc_t >> 3) - ((int32_t)_cal.t1 << 1))
 	    * ((int32_t)_cal.t2 >> 11);
 
-	int32_t var2 = ((adc_t >> 4) - (int32_t)_cal.t1)
+	int32_t ft = ((adc_t >> 4) - (int32_t)_cal.t1)
 	    * (((adc_t >> 4) - (int32_t)_cal.t1) >> 12)
 	    * ((int32_t)_cal.t3 >> 14);
 
-	return var1 + var2;
+	return fd + ft;
     }
 	    
     struct cal {
