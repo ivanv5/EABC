@@ -19,8 +19,8 @@ int main() {
 	std::time_t now = std::time(nullptr);
 	char ts[80];
 	std::strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", std::localtime(&now));
-	f << ts << " " << m.t << " " << m.h << " " << p << std::endl;
-	std::cout << ts << " " << m.t << " " << m.h << " " << p << std::endl;
+	f << ts << " " << m.t << " " << m.h << " " << p/100.f << std::endl;
+	std::cout << ts << " " << m.t << " " << m.h << " " << p/100.f << std::endl;
 	f.flush();
 	std::this_thread::sleep_for(5s);
     }
