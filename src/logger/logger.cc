@@ -18,13 +18,12 @@ int main() {
 	float p = sensor_p.read_p();
 	std::time_t now = std::time(nullptr);
 	char ts[80];
-	std::strftime(ts, sizeof(ts), "%d %m %Y %H:%M:%S", std::localtime(&now));
-	f << ts << " " << "T=" << m.t << "ºC" <<
-	 " " << "RH=" << m.h <<"%"<< " " << p/100.f 
-	<< "Pa"<< std::endl;
-	std::cout << ts << " " << "T=" << m.t << 
-	"ºC" << " " << "RH=" << m.h <<"%"<< " " << p/100.f
-	<< "Pa"<< std::endl;
+	std::strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+	f << ts << " " << m.t << " " << m.h << " " << p << std::endl;
+	std::cout << ts << " "
+		  << "T=" << m.t <<"ºC" << " "
+		  << "RH=" << m.h <<"%"<< " "
+		  << p/100.f << "Pa"<< std::endl;
 	f.flush();
 	std::this_thread::sleep_for(5s);
     }

@@ -19,7 +19,7 @@ public:
   } __attribute__((packed));
 
   ZS042() : I2C::device(0x28) {}
-  register read() {
+  void register_read() {
     
     int seconds_reg = 0;
     int minutes_reg = 1;
