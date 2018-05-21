@@ -1,58 +1,68 @@
 #ifndef ZS042_HH
 #define ZS042_HH
-
-# include "I2C.hh"
+#include "I2C.hh"
+#include <iostream>
+#include <fstream>
+#include <unistd.h>
 
 class ZS042 : public I2C::device {
-  struct measurement_in {
-    char data[1];
-  };
   
 public:
-  struct measurement {
-    float seconds;
-    float minutes;
-    float hours;
-    float day;
-    float month;
-    float year;
-  } __attribute__((packed));
+   struct measurement {
+   float seconds;
+   float minutes;
+   float hours;
+   float date;
+   float month;
+   float year;
+   } __attribute__((packed));
 
-  ZS042() : I2C::device(0x28) {}
-  void register_read() {
-    
-    int seconds_reg = 0;
-    int minutes_reg = 1;
-    int hour_reg = 2;
-    int day_reg = 3;
-    int date_reg = 4;
-    int month_reg = 5;
-    int year_reg = 6;
-    measurement_in m0,m2,m3,m4,m5,m6;
-    write(seconds_reg);
-    read(m0);
-    write(minutes_reg);
-    read(m1);
-    write (hour_reg);
-    read(m2);
-    write (day_reg);
-    read(m3);
-    write(date_reg);
-    read(m4);
-    write(month_reg);
-    read(m5);
-    write(year_reg);
-    read(m6);
-    measurement ret {
-      .seconds = ;
-      .minutes =; 
-      .hours =; 
-      .day=;
-      .month=;
-      .year=;
-      return ret;
-  }
+  ZS042() : I2C::device(0x68) {}
+  measurement  clock_read() {
+   
+    read_register(seconds_reg,m0);
+    read_register(minutes_reg,m1);
+    read_register(hour_reg,m2);
+    read_register(date_reg,m3);
+    read_register(month_reg,m4);
+    read_register(year_reg,m5);
+    float seconds_in = internal_read(m0);
+    float minutes_in = internal_read(m1);
+    float hours_in = internal_read(m2);
+    float date_in = internal_read(m3);
+    float month_in = internal_read(m4);
+    float year_in = internal_read(m5)+2000;
   
+    measurement ret{
+      seconds_in,
+      minutes_in,
+      hours_in,
+      date_in,
+      month_in,
+      year_in
+	
+    };
+    return ret;
+       }
+private:
+
+    uint8_t m0,m1,m2,m3,m4,m5;    
+    char seconds_reg = 0x00;
+    char minutes_reg = 0x01;
+    char hour_reg = 0x02;
+    char date_reg = 0x04;
+    char month_reg = 0x05;
+    char year_reg = 0x06;
+ 
+  float internal_read(uint8_t s){
+    uint8_t msb_s= (s>>4);
+    uint8_t lsb_s=(s<<4);
+    lsb_s= lsb_s>>4;
+    float msb_sfl=msb_s*10;
+    float total= msb_sfl+lsb_s;
+    return total;
+  }
+ 
 };
 
 #endif
