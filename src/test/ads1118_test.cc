@@ -16,7 +16,7 @@ public:
 TEST_F(ADS1118Test, TestExporter) {
     ads1118 adc(0); //declara adc como objeto de la clase ads1118
     ads1118 s(0);
-    s= adc.in(0);
+    s= adc.in;
     
-    std::cout << adc.in(0) << std::endl;//preguntar a Paco
+  
 }

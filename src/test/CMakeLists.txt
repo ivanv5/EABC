@@ -2,7 +2,7 @@ set(
     TESTS 
         "main.cc"
         "gpio_test.cc"
-        "ads1118_test.cc"
+       
         "hyt221_test.cc"
         "file_test.cc"
 )

@@ -8,6 +8,8 @@ set(RPI_SOURCES
   "HYT221.hh"
   "BMP280.hh"
   "zs042.hh"
+  "ads1118.hh"
+
 )
 
 set(CMAKE_CXX_FLAGS "-std=gnu++1y")

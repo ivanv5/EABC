@@ -4,7 +4,6 @@
 # include "SPI.hh"
 
 class ads1118 {
-
     // CFG register is stored MSB first
     struct config_register {
 	unsigned mode:     1;
@@ -36,11 +35,11 @@ public:
 	_spi.write(cfg);
     }
 
-    int16_t in(uint8_t channel) const { //IN LEER.
+  int16_t in(uint sensor) const { //IN LEER.
 	config_register cfg = {
 	  .mode = 1,
-	  .pga = 0,
-	  .mux = 4u + channel,
+	  .pga = 1,
+	  .mux = 0+sensor,
 	  .ss = 1,
 	  .reserved = 1,
 	  .nop = 1,
@@ -48,8 +47,10 @@ public:
 	  .ts_mode = 0,
 	  .rate = 3,
 	};
+       _spi.write(cfg);
 	return _xfer(cfg);
-    }
+}
+
 
     int16_t t() const {
 	config_register cfg = {
@@ -73,7 +74,7 @@ private:
 	return (int16_t) (data[0] << 8 | data[1]);
     }
 
-    SPI::device _spi;
+  SPI::device _spi;
 };
 
 #endif
