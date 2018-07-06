@@ -81,6 +81,6 @@ int main()
 		f << log_record << std::endl;
 		f.flush();
 		std::cout << log_record << std::endl;
-		std::this_thread::sleep_for(3s);	
+		std::this_thread::sleep_for(3s);
 	}
 }

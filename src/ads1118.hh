@@ -47,7 +47,7 @@ public:
 			.mode = 1,
 			.pga = 1,
 			.mux = channel,
-			.ss = 0,
+			.ss = 1,
 			.reserved = 1,
 			.nop = 1,
 			.pull_up = 1,
