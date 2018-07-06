@@ -1,5 +1,6 @@
 #ifndef RPI_HH
 #define RPI_HH
+
 # include <bcm2835.h>
 # include <system_error>
 
@@ -18,8 +19,6 @@ namespace RPi {
 	class base {
 		static system _rpi;
 	};
-
-	using spi_ctrl = SPI::gpio_ctrl<4>;
 
 }
 

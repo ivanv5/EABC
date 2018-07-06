@@ -2,6 +2,7 @@
 #define SPI_HH
 
 #include "RPi.hh"
+#include <array>
 
 namespace SPI {
 
@@ -15,10 +16,13 @@ namespace SPI {
 	template <class pin_ctrl>
 	class addressing: public pin_ctrl {
 	public:
-		address() : _addr(~0) { init(); }
+		addressing() : _addr(~0) {}
+
+		template <class T>
+		addressing(const T& cfg): pin_ctrl(cfg) {}
 
 		void set(uint8_t addr) {
-			update(addr) && select(addr);
+			if(update(addr)) pin_ctrl::slave_select(addr);
 		}
 
 	protected:
@@ -53,13 +57,13 @@ namespace SPI {
 	protected:
 		/*! \brief Set current address value.
 		*/
-		void select(uint8_t addr) {
+		void slave_select(uint8_t addr) {
 			if (addr >= sizeof _cspins) return;
 			bcm2835_spi_chipSelect(_cspins[addr]); 
 		}
 
 	private:
-		static const uint8_t _cspins[] = { BCM2835_SPI_CS0, BCM2835_SPI_CS1, BCM2835_SPI_CS2 };
+		static const uint8_t _cspins[3];
 	};
 
 	/*! \brief GPIO pin control for explicit slave addressing.
@@ -67,7 +71,7 @@ namespace SPI {
 	In order to avoid performance penalties and dyanmic memory
 	usage we use a static size for the pin array.
 	*/
-	template <unsigned size>
+	template <unsigned _size>
 	class gpio_ctrl {
 	public:
 		gpio_ctrl() = delete;
@@ -83,14 +87,15 @@ namespace SPI {
 		\param pins an ordered list of pins to be used as chip
 		select wires.
 		*/
-		gpio_ctrl(std::initializer_list<uint8_t> pins) {
-			bcm2835_spi_chipSelect(BCM2835_SPI_NONE);
+		template <class T>
+		gpio_ctrl(const std::initializer_list<T>& pins) {
+			bcm2835_spi_chipSelect(BCM2835_SPI_CS_NONE);
 			std::copy(pins.begin(), pins.end(), _pins.begin());
 			for (auto pin : _pins)
 				bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP);
 		}
 
-		static constexpr size_t size() { return size; }
+		static constexpr size_t size() { return _size; }
 
 	protected:
 		/*! \brief Set current address value.
@@ -100,28 +105,23 @@ namespace SPI {
 
 		\param addr a valid address in [0:7] range.
 		*/
-		void select(uint8_t addr) {
-			if (addr >= size) return;
+		void slave_select(uint8_t addr) {
+			if (addr >= _size) return;
 			int target = _pins[addr];
 			for (int pin : _pins)
 				bcm2835_gpio_write(pin, pin == target ? LOW : HIGH);
 		}
 
-		std::array<uint8_t, size> _pins;
+		std::array<uint8_t, _size> _pins;
 	};
 
 	template <class pin_ctrl>
 	class bus : public RPi::base {
 	public:
-		bus() {
-			if (!bcm2835_spi_begin())
-				throw std::runtime_error("Failed to init SPI. Are you root?");
-			bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
-			set_speed(4000000);
-		}
+		bus() { init(); }
 
 		template <class T>
-		bus(T cfg) : _addressing(cfg), bus() { }
+		bus(const std::initializer_list<T>& cfg) : _addressing(cfg) { init(); }
 	
 		~bus() { bcm2835_spi_end(); }
 
@@ -138,8 +138,16 @@ namespace SPI {
 		}
 
 	private:
+		void init() {
+			if (!bcm2835_spi_begin())
+				throw std::runtime_error("Failed to init SPI. Are you root?");
+			bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
+			set_speed(4000000);
+		}
+
+	private:
 		unsigned _speed;
-		static addressing<pin_ctrl> _addressing;
+		addressing<pin_ctrl> _addressing;
 	};
     
 	template <class pin_ctrl>
@@ -164,7 +172,6 @@ namespace SPI {
 			char& out  = const_cast<char&>(reinterpret_cast<const char&>(data_out));
 			bcm2835_spi_transfernb(&out, &in,
 						std::max(sizeof(T), sizeof(U)));
-			bcm2835_gpio_write(_address,HIGH);
 		}
 
 	private:
@@ -173,6 +180,10 @@ namespace SPI {
 	};
 
 
+}
+
+namespace RPi {
+	using spi_ctrl = SPI::gpio_ctrl<4>;
 }
 
 #endif

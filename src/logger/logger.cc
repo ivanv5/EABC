@@ -2,6 +2,7 @@
 #include "BMP280.hh"
 #include "zs042.hh"
 #include "ads1118.hh"
+#include <fmt/format.h>
 #include <fstream>
 #include <iostream>
 #include <ctime>
@@ -12,8 +13,8 @@
 class differential_ad {
 public:
 	differential_ad(uint8_t addr) : _ad(addr) {}
-	double vref() { return _ad.in_V(3); }
-	double vaux() { return _ad.in_V(0); }
+	double vref() { return _ad.in_V(0); }
+	double vaux() { return _ad.in_V(3); }
 private:
 	ads1118<> _ad;
 };
@@ -21,8 +22,8 @@ private:
 class single_ended_ad {
 public:
 	single_ended_ad(uint8_t addr) : _ad(addr) {}
-	double vref() { return _ad.in_V(3); }
-	double vaux() { return _ad.in_V(0); }
+	double vref() { return _ad.in_V(4); }
+	double vaux() { return _ad.in_V(5); }
 private:
 	ads1118<> _ad;
 };
@@ -36,12 +37,12 @@ struct gas_sensor {
 };
 
 using alpha_sense = gas_sensor<differential_ad>;
-using spec_sensor = gas_sensor<differential_ad>;
+using spec_sensor = gas_sensor<single_ended_ad>;
 
 std::string fmt_rtc(ZS042::measurement clk) {
 	return fmt::format("{}-{}-{} {}:{}:{}",
 					clk.year, clk.month, clk.date,
-					clk.hours, clk.minutes, clk.seconds)
+					clk.hours, clk.minutes, clk.seconds);
 }
 
 template <class sensor_set>
@@ -67,12 +68,12 @@ int main()
 
 	for(;;) {
 		using namespace std::chrono_literals;
-		auto hyt = ht.read_h_t();
+		auto ht = hyt.read_h_t();
 		auto clk = rtc.clock_read();
 
 		std::string log_record = 
 			fmt::format("{} {} {} {} {} {}",
-						fmt_rtc(clk), hyt.t, hyt.h, 
+						fmt_rtc(clk), ht.t, ht.h, 
 						p.read_p() / 100.f,
 						fmt_sensor_set(alpha),
 						fmt_sensor_set(spec));

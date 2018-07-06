@@ -3,7 +3,13 @@
 
 RPi::system RPi::base::_rpi;
 I2C::bus I2C::device::_bus;
-SPI::bus SPI::device<spi_ctrl>::_bus = { 5, 19, 6, 13 };
+
+template<>
+SPI::bus<RPi::spi_ctrl> SPI::device<RPi::spi_ctrl>::_bus = { 5, 19, 6, 13 };
+
+const uint8_t SPI::cs_ctrl::_cspins[3] = {
+	BCM2835_SPI_CS0, BCM2835_SPI_CS1, BCM2835_SPI_CS2
+};
 
 void I2C::check_reason_code(uint8_t code)
 {

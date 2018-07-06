@@ -46,7 +46,7 @@ public:
 		config_register cfg = {
 			.mode = 1,
 			.pga = 1,
-			.mux = 0 + channel,
+			.mux = channel,
 			.ss = 0,
 			.reserved = 1,
 			.nop = 1,
@@ -63,7 +63,7 @@ public:
 		return in(channel) * 4.096 / 32768.;
 	}
 
-    int16_t t() const {
+	int16_t t() const {
 		config_register cfg = {
 			.mode = 1,
 			.pga = 0,
@@ -76,14 +76,14 @@ public:
 			.rate = 3,
 		};
 		return _xfer(cfg);
-    }
+	}
     
 private:
-    int16_t _xfer(const config_register& cfg) const {
+	int16_t _xfer(const config_register& cfg) const {
 		unsigned char data[2];
 		_spi.xfer(cfg, data);
 		return (int16_t) (data[0] << 8 | data[1]);
-    }
+	}
 
 
 	SPI::device<pin_ctrl> _spi;
