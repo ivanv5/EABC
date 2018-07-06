@@ -2,7 +2,6 @@
 #include "BMP280.hh"
 #include "zs042.hh"
 #include "ads1118.hh"
-#include "alphasense.hh"
 #include <fstream>
 #include <iostream>
 #include <ctime>
@@ -10,78 +9,77 @@
 #include <thread>
 #include <cerrno>
 
-int main() {
-    hyt221 sensor_ht;
-    bmp280 sensor_p;
-    ZS042 f_clock;
-    ads1118 adc1(5);//direccion ADC 1 (chipselect)
-    ads1118 adc2(19);
-    ads1118 adc3(6);
-    ads1118 adc4(13);	
-    std::ofstream f("log.txt");
-   	
-    for(;;) {
-	using namespace std::chrono_literals;
-	hyt221::measurement m = sensor_ht.read_h_t();
-	ZS042::measurement cl =f_clock.clock_read();
-	float p = sensor_p.read_p();	
-	int16_t cv1= adc1.in(3); //ALPHASENSE NO2 VREF
- 	std::this_thread::sleep_for(0.1s);
-	int16_t cv2= adc1.in(0); // ALPHASENSE NO2 AUX
-	std::this_thread::sleep_for(0.1s);
-        int16_t cv3= adc2.in(3); //ALPHASENSE O3 VREF
- 	std::this_thread::sleep_for(0.1s);
-	int16_t cv4= adc2.in(0); // ALPHASENSE O3 AUX
-        std::this_thread::sleep_for(0.1s);
-	int16_t cv5= adc3.in(3); //SPEC O3 VREF
-        std::this_thread::sleep_for(0.1s);
-        int16_t cv6= adc3.in(0); //SPEC O3 VAUX
-        std::this_thread::sleep_for(0.1s);
-        int16_t cv7= adc4.in(3); // SPEC NO2 VREF 
-        std::this_thread::sleep_for(0.1s);
-        int16_t cv8= adc4.in(0);// SPEC NO2 VAUX
-	double alphano2vref= conversion(cv1);
-	double alphano2aux= conversion(cv2);
-	double alphao3vref= conversion(cv3);
-        double alphao3aux= conversion(cv4);
-        double speco3vref= conversion (cv5);
-        double speco3aux= conversion (cv6);
-        double specno2vref= conversion (cv7);
-        double specno2aux= conversion (cv8);
-	std::time_t now = std::time(nullptr);
-	char ts[80];
-
-	f << cl.year <<"-"<<cl.month
-		  <<"-"<<cl.date<<" "<<cl.hours
-		  <<":"<<cl.minutes<<":"<<cl.seconds
-	          <<" "<< m.t << " "<< m.h 
-                  <<" "<<alphano2vref
-                  <<" "<<alphano2aux
-                  <<" "<<alphao3vref
-                  <<" "<<alphao3aux
-                  <<" "<<speco3vref
-                  <<" "<<speco3aux
-                  <<" "<<specno2vref
-                  <<" "<<specno2aux
-                  <<" "<< p/100.f 
-                  <<std::endl;
-	std::cout << cl.year <<"-"<<cl.month
-		  <<"-"<<cl.date<<" "<<cl.hours
-		  <<":"<<cl.minutes<<":"<<cl.seconds
-	          <<" "<<"T=" << m.t <<"ºC" << " "
-		  << "RH=" << m.h <<"%"<< " "
-                  <<" "<<"adc1_1="<<alphano2vref
-                  <<" "<<"adc1_2="<<alphano2aux
-                  <<" "<<"adc2_1="<<alphao3vref
-                  <<" "<<"adc2_2="<<alphao3aux
-                  <<" "<<"adc3_1="<<speco3vref
-                  <<" "<<"adc3_2="<<speco3aux
-                  <<" "<<"adc4_1="<<specno2vref
-                  <<" "<<"adc4_2="<<specno2aux
-                  <<" "<< p/100.f << "Pa"<< 
-                  std::endl;
-	f.flush();
-	std::this_thread::sleep_for(3s);
-	
-    }
+class differential_ad {
+public:
+	differential_ad(uint8_t addr) : _ad(addr) {}
+	double vref() { return _ad.in_V(3); }
+	double vaux() { return _ad.in_V(0); }
+private:
+	ads1118<> _ad;
 };
+
+class single_ended_ad {
+public:
+	single_ended_ad(uint8_t addr) : _ad(addr) {}
+	double vref() { return _ad.in_V(3); }
+	double vaux() { return _ad.in_V(0); }
+private:
+	ads1118<> _ad;
+};
+
+template <class ad_type>
+struct gas_sensor {
+	gas_sensor(uint8_t addr) : no2(addr), o3(addr + 1) {}
+
+	ad_type no2;
+	ad_type o3;
+};
+
+using alpha_sense = gas_sensor<differential_ad>;
+using spec_sensor = gas_sensor<differential_ad>;
+
+std::string fmt_rtc(ZS042::measurement clk) {
+	return fmt::format("{}-{}-{} {}:{}:{}",
+					clk.year, clk.month, clk.date,
+					clk.hours, clk.minutes, clk.seconds)
+}
+
+template <class sensor_set>
+std::string fmt_sensor_set(sensor_set set) {
+	return fmt::format("{} {}", 
+					fmt_sensor(set.no2),
+					fmt_sensor(set.o3));
+}
+
+template <class sensor>
+std::string fmt_sensor(sensor s) {
+	return fmt::format("{} {}", s.vref(), s.vaux());
+}
+
+int main() 
+{
+	hyt221 hyt;
+	bmp280 p;
+	ZS042 rtc;
+	alpha_sense alpha(0);
+	spec_sensor spec(2);
+	std::ofstream f("log.txt");
+
+	for(;;) {
+		using namespace std::chrono_literals;
+		auto hyt = ht.read_h_t();
+		auto clk = rtc.clock_read();
+
+		std::string log_record = 
+			fmt::format("{} {} {} {} {} {}",
+						fmt_rtc(clk), hyt.t, hyt.h, 
+						p.read_p() / 100.f,
+						fmt_sensor_set(alpha),
+						fmt_sensor_set(spec));
+		
+		f << log_record << std::endl;
+		f.flush();
+		std::cout << log_record << std::endl;
+		std::this_thread::sleep_for(3s);	
+	}
+}

@@ -1,93 +1,177 @@
 #ifndef SPI_HH
 #define SPI_HH
-# include "RPi.hh"
-# include <algorithm>
-# include <stdio.h>
-#include <fstream>
-#include <iostream>
-#include <ctime>
-#include <locale>
-#include <thread>
-#include <cerrno>
-#include <pigpio.h>
-//
+
+#include "RPi.hh"
+
 namespace SPI {
-  
-  class bus : public RPi::base {
-	uint8_t _addr;
-	unsigned _speed;
 
-    public:
-	bus():_addr(~0)   {
-	    if (!bcm2835_spi_begin())
-		throw std::runtime_error("Failed to init SPI. Are you root?");
-	    bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
-	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, 0);
-	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, 0);
-	    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS2, 0);
-	  //  set_address(_addr);
-	    bcm2835_gpio_fsel(5,BCM2835_GPIO_FSEL_OUTP);
-            bcm2835_gpio_fsel(6,BCM2835_GPIO_FSEL_OUTP);
-            bcm2835_gpio_fsel(13,BCM2835_GPIO_FSEL_OUTP);
-  	    bcm2835_gpio_fsel(19,BCM2835_GPIO_FSEL_OUTP);
-	    set_speed(4000000);
+	/*! \brief SPI bus addressing.
 
-	}
+	This class encapsulates the SPI bus address as a CRTP in 
+	order to delegate pin control to another class.
+
+	Note that pin_ctrl class must supply a default constructor.
+	*/
+	template <class pin_ctrl>
+	class addressing: public pin_ctrl {
+	public:
+		address() : _addr(~0) { init(); }
+
+		void set(uint8_t addr) {
+			update(addr) && select(addr);
+		}
+
+	protected:
+		bool update(uint8_t addr) {
+			if (_addr == addr) return false;
+			_addr = addr;
+			return true;
+		}
+
+		uint8_t _addr;
+	};
+
+	/*! \brief CS pin control for SPI address.
+
+	This class encapsulates SPI CS handling.  SPI in BCM2835 
+	uses upto 3 CS wires but only 2 are actually available in 
+	the 40 pin header.
+
+	Polarity is assumed to be active low. This class is agnostic
+	with respect to whether a decoder is used to generate actual
+	device CS signal from CS[0:2] or not.
+	*/
+	class cs_ctrl {
+	public:
+		cs_ctrl() {
+			for (uint8_t cs : _cspins)
+				bcm2835_spi_setChipSelectPolarity(cs, 0);
+		}
+
+		static constexpr size_t size() { return sizeof(_cspins); }
+
+	protected:
+		/*! \brief Set current address value.
+		*/
+		void select(uint8_t addr) {
+			if (addr >= sizeof _cspins) return;
+			bcm2835_spi_chipSelect(_cspins[addr]); 
+		}
+
+	private:
+		static const uint8_t _cspins[] = { BCM2835_SPI_CS0, BCM2835_SPI_CS1, BCM2835_SPI_CS2 };
+	};
+
+	/*! \brief GPIO pin control for explicit slave addressing.
 	
-	~bus() { bcm2835_spi_end(); }
+	In order to avoid performance penalties and dyanmic memory
+	usage we use a static size for the pin array.
+	*/
+	template <unsigned size>
+	class gpio_ctrl {
+	public:
+		gpio_ctrl() = delete;
 
-	void set_address(uint8_t addr) {
-	    //if (_addr == addr) return;
-	    _addr = addr;
-	    //if(_addr==0){
-	bcm2835_gpio_write(5,HIGH);
-	bcm2835_gpio_write(6,HIGH);
-	bcm2835_gpio_write(13,HIGH);
-        bcm2835_gpio_write(19,HIGH);
-	bcm2835_gpio_write(_addr,LOW);
+		/*! \brief Construct a GPIO slave addresser with a list
+		of pins to be used as chip select wires
+		(active low).
 
-	}
+		Chip select wires for each slave are specified in order.
+		Slave 0 uses the first pin, slave 1 the second one, and so
+		on.
 
-	void set_speed(unsigned s) {
-	    if (_speed == s) return;
-	    _speed = s;
-	    uint16_t div = static_cast<uint16_t>(RPi::SYSTEM_CLOCK_FREQ/s);
-	    // Divider must be even
-	    bcm2835_spi_setClockDivider(div & 1);
-	}
+		\param pins an ordered list of pins to be used as chip
+		select wires.
+		*/
+		gpio_ctrl(std::initializer_list<uint8_t> pins) {
+			bcm2835_spi_chipSelect(BCM2835_SPI_NONE);
+			std::copy(pins.begin(), pins.end(), _pins.begin());
+			for (auto pin : _pins)
+				bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP);
+		}
 
-    };
+		static constexpr size_t size() { return size; }
+
+	protected:
+		/*! \brief Set current address value.
+
+		Valid address is any positive in range [0:size-1]. It
+		is assumed that.
+
+		\param addr a valid address in [0:7] range.
+		*/
+		void select(uint8_t addr) {
+			if (addr >= size) return;
+			int target = _pins[addr];
+			for (int pin : _pins)
+				bcm2835_gpio_write(pin, pin == target ? LOW : HIGH);
+		}
+
+		std::array<uint8_t, size> _pins;
+	};
+
+	template <class pin_ctrl>
+	class bus : public RPi::base {
+	public:
+		bus() {
+			if (!bcm2835_spi_begin())
+				throw std::runtime_error("Failed to init SPI. Are you root?");
+			bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
+			set_speed(4000000);
+		}
+
+		template <class T>
+		bus(T cfg) : _addressing(cfg), bus() { }
+	
+		~bus() { bcm2835_spi_end(); }
+
+		void set_speed(unsigned s) {
+			if (_speed == s) return;
+			_speed = s;
+			uint16_t div = static_cast<uint16_t>(RPi::SYSTEM_CLOCK_FREQ/s);
+			// Divider must be even
+			bcm2835_spi_setClockDivider(div & 1);
+		}
+
+		void set_address(uint8_t addr) { 
+			_addressing.set(addr); 
+		}
+
+	private:
+		unsigned _speed;
+		static addressing<pin_ctrl> _addressing;
+	};
     
-    class device {
-    public:
-	explicit device(uint8_t address) : _address(address) {
+	template <class pin_ctrl>
+	class device {
+	public:
+		explicit device(uint8_t address) : _address(address) {
+		}
 
-}
+		template <class T>
+		void read(T& data) const { xfer(data); }
 
-	template <class T>
-	void read(T& data) const { xfer(data); }
-
-	template <class T>
-	void write(const T& data) const { T out; xfer(data, out); }
+		template <class T>
+		void write(const T& data) const { T out; xfer(data, out); }
  
-	template <class T>
-	void xfer(T& data) const { xfer(data, data); }
+		template <class T>
+		void xfer(T& data) const { xfer(data, data); }
 
-	template <class T, class U>
-	void xfer(const T& data_out, U& data_in) const {
+		template <class T, class U>
+		void xfer(const T& data_out, U& data_in) const {
+			_bus.set_address(_address);
+			char& in  = reinterpret_cast<char&>(data_in);
+			char& out  = const_cast<char&>(reinterpret_cast<const char&>(data_out));
+			bcm2835_spi_transfernb(&out, &in,
+						std::max(sizeof(T), sizeof(U)));
+			bcm2835_gpio_write(_address,HIGH);
+		}
 
-	    _bus.set_address(_address);
-	    char& in  = reinterpret_cast<char&>(data_in);
-	    char& out  = const_cast<char&>(reinterpret_cast<const char&>(data_out));
-	    bcm2835_spi_transfernb(&out, &in,
-				   std::max(sizeof(T), sizeof(U)));
-	bcm2835_gpio_write(_address,HIGH);
-}
+	private:
+		uint8_t _address;
+		static bus<pin_ctrl> _bus;
+	};
 
-    private:
-	uint8_t _address;
-	static bus _bus;
-    };
 
 }
 
